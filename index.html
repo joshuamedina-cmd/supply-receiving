@@ -621,7 +621,7 @@
   </div>
 
   <!-- LOGIN SCREEN -->
-  <div id="loginScreen" class="card login-section">
+  <div id="loginScreen" class="card login-section" style="display:none!important">
     <h2>Operator Login</h2>
     <label class="form-label" for="codeInput">Enter your 4-digit operator code</label>
     <input
@@ -637,8 +637,8 @@
     <div style="font-size:0.75rem;opacity:0.6;margin-top:4px;">Auto-submits on 4 digits &bull; or press Enter</div>
   </div>
 
-  <!-- MAIN APP (hidden until login) -->
-  <div id="mainApp" style="display:none;">
+  <!-- MAIN APP -->
+  <div id="mainApp" style="display:block">
 
     <!-- OPERATOR BADGE + STATUS -->
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
@@ -971,16 +971,7 @@ async function handleLogin(code) {
 }
 
 function logout() {
-  currentOperator = null;
-  receiptItems = [];
-  sessionReceipts = [];
-  boardReady = false;
-  newItemEntryGroupId = null;
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'block';
-  document.getElementById('codeInput').value = '';
-  document.getElementById('codeInput').focus();
-  switchTab('receive');
+  window.location.href = "https://kmjz-master-hub.vercel.app";
 }
 
 // ==================== SUPPLIER DROPDOWN ====================
@@ -1478,5 +1469,28 @@ document.getElementById('itemQty').addEventListener('keydown', function(e) {
 });
 </script>
 
+
+<script>
+// === AUTO-SET OPERATOR FROM LOCALSTORAGE (no code wall) ===
+(function() {
+  var name = null;
+  try { name = localStorage.getItem('kmjz_operator_name'); } catch(e) {}
+  if (name) {
+    if (typeof currentOperator !== 'undefined') currentOperator = name;
+    window._autoOperator = name;
+  }
+  // Update operator badge/name elements
+  var badge = document.getElementById('operatorName');
+  if (badge && name) badge.textContent = name;
+  // Hide login, show app
+  var login = document.getElementById('loginScreen');
+  if (login) login.style.display = 'none';
+  var app = document.getElementById('mainApp') || document.getElementById('appContent');
+  if (app) app.style.display = '';
+  // Show header if hidden
+  var header = document.getElementById('appHeader');
+  if (header) header.style.display = '';
+})();
+</script>
 </body>
 </html>
