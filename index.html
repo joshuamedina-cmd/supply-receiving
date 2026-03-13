@@ -222,6 +222,39 @@
     gap: 12px;
   }
 
+  /* QUANTITY WITH UNIT LABEL */
+  .qty-with-unit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .qty-with-unit .form-input {
+    flex: 1;
+  }
+
+  .unit-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent-dark);
+    white-space: nowrap;
+    min-width: 60px;
+  }
+
+  /* NEW ITEM ENTRY */
+  .new-item-section {
+    display: none;
+    margin-top: 10px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 1px dashed var(--border);
+  }
+
+  .new-item-section.visible {
+    display: block;
+  }
+
   /* SUPPLY ITEMS TABLE */
   .items-list {
     list-style: none;
@@ -642,7 +675,7 @@
             <option value="__add_new__">+ Add New Vendor...</option>
           </select>
           <input type="text" id="newSupplierInput" class="form-input" placeholder="Enter new vendor name..." style="display:none; margin-top:8px;">
-          <div id="newSupplierActions" style="display:none; margin-top:8px; display:none; gap:8px;">
+          <div id="newSupplierActions" style="display:none; margin-top:8px; gap:8px;">
             <button class="btn btn-small btn-green" style="max-width:120px; padding:8px 16px; font-size:13px;" onclick="confirmNewSupplier()">Add</button>
             <button class="btn btn-small btn-outline" style="max-width:120px; padding:8px 16px; font-size:13px;" onclick="cancelNewSupplier()">Cancel</button>
           </div>
@@ -672,30 +705,41 @@
       <div class="card">
         <h2>Add Supply Items</h2>
         <div class="form-group">
-          <label class="form-label" for="itemName">Item Name / Description</label>
-          <input type="text" id="itemName" class="form-input" placeholder="e.g. Filter Cartridges">
+          <label class="form-label" for="itemName">Supply Type</label>
+          <select id="itemName" class="form-select">
+            <option value="">Select supply type...</option>
+            <option value="Biomass">Biomass</option>
+            <option value="Citric acid">Citric acid</option>
+            <option value="Sodium Hydroxide">Sodium Hydroxide</option>
+            <option value="Soda Ash">Soda Ash</option>
+            <option value="DE Filter aid">DE Filter aid</option>
+            <option value="Salt">Salt</option>
+            <option value="Acetone">Acetone</option>
+            <option value="__new_item__">+ New Item...</option>
+          </select>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="itemQty">Quantity</label>
-            <input type="number" id="itemQty" class="form-input" placeholder="0" min="1">
+
+        <!-- New Item Entry (hidden by default) -->
+        <div id="newItemSection" class="new-item-section">
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label" for="newItemName">New Item Name</label>
+            <input type="text" id="newItemName" class="form-input" placeholder="Enter new item name...">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="itemUnit">Unit</label>
-            <select id="itemUnit" class="form-select">
-              <option value="units">Units</option>
-              <option value="boxes">Boxes</option>
-              <option value="cases">Cases</option>
-              <option value="pallets">Pallets</option>
-              <option value="bags">Bags</option>
-              <option value="drums">Drums</option>
-              <option value="gallons">Gallons</option>
-              <option value="lbs">Lbs</option>
-              <option value="kg">Kg</option>
-              <option value="liters">Liters</option>
-              <option value="rolls">Rolls</option>
-              <option value="other">Other</option>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" for="newItemUnit">Unit</label>
+            <select id="newItemUnit" class="form-select">
+              <option value="Boxes">Boxes</option>
+              <option value="Bags">Bags</option>
+              <option value="Barrels">Barrels</option>
             </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="itemQty">Quantity</label>
+          <div class="qty-with-unit">
+            <input type="number" id="itemQty" class="form-input" placeholder="0" min="1">
+            <span id="unitLabel" class="unit-label"></span>
           </div>
         </div>
         <div class="form-group">
@@ -780,6 +824,26 @@
 const MONDAY_API = 'https://api.monday.com/v2';
 const MONDAY_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjYyNzA3NzcxOSwiYWFpIjoxMSwidWlkIjo3NTA2NTY3OCwiaWFkIjoiMjAyNi0wMi0yOFQwMToxNzowOS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjkxNDg2NzMsInJnbiI6InVzZTEifQ.ocD9w0Q-17JqNfU4iZXL4i3frn_Bw4pyVe_fkhJuiPg';
 
+const BOARD_ID = 18402880277;
+
+// Supply type -> group & column mapping
+const SUPPLY_GROUPS = {
+  'Biomass':           { groupId: 'topics',          columnId: 'numeric_mm16yt4m', unit: 'Boxes' },
+  'Citric acid':       { groupId: 'group_mm17brcp',  columnId: 'numeric_mm17bhbw', unit: 'Bags' },
+  'Sodium Hydroxide':  { groupId: 'group_mm17rn98',  columnId: 'numeric_mm17bhbw', unit: 'Bags' },
+  'Soda Ash':          { groupId: 'group_mm17ansz',  columnId: 'numeric_mm17bhbw', unit: 'Bags' },
+  'DE Filter aid':     { groupId: 'group_mm17qa4z',  columnId: 'numeric_mm17bhbw', unit: 'Bags' },
+  'Salt':              { groupId: 'group_mm1akxyb',  columnId: 'numeric_mm17bhbw', unit: 'Bags' },
+  'Acetone':           { groupId: 'group_mm1bkwdd',  columnId: 'numeric_mm1bacfw', unit: 'Barrels' },
+};
+
+// Unit name -> column ID mapping (for new items)
+const UNIT_COLUMN_MAP = {
+  'Boxes':   'numeric_mm16yt4m',
+  'Bags':    'numeric_mm17bhbw',
+  'Barrels': 'numeric_mm1bacfw',
+};
+
 // Operators (same as Decanter Checkpoint)
 const OPERATORS = {
   '4821': 'Josh',
@@ -804,33 +868,13 @@ const OPERATORS = {
   '8305': 'George T'
 };
 
-// ==================== MONDAY.COM BOARD CONFIG ====================
-// These get auto-detected on login
-let BOARD_ID = null;
-let BOARD_COLUMNS = {};  // Maps our field names to Monday column IDs
-let boardReady = false;
-
-// Column definitions we need on the board
-// Each item submitted becomes a row; these are the columns:
-const REQUIRED_COLUMNS = [
-  { key: 'supplier',        title: 'Supplier',         type: 'text' },
-  { key: 'po_number',       title: 'PO / Reference #', type: 'text' },
-  { key: 'delivery_date',   title: 'Delivery Date',    type: 'date' },
-  { key: 'delivery_method', title: 'Delivery Method',  type: 'text' },
-  { key: 'quantity',        title: 'Quantity',          type: 'numbers' },
-  { key: 'unit',            title: 'Unit',              type: 'text' },
-  { key: 'condition',       title: 'Condition',         type: 'status' },
-  { key: 'notes',           title: 'Notes',             type: 'long_text' },
-  { key: 'received_by',     title: 'Received By',       type: 'text' },
-  { key: 'received_at',     title: 'Received At',       type: 'text' },
-  { key: 'receipt_id',      title: 'Receipt ID',        type: 'text' }
-];
-
 // ==================== STATE ====================
 let currentOperator = null;
 let receiptItems = [];
 let sessionReceipts = [];
 let receiptCounter = 0;
+let boardReady = false;
+let newItemEntryGroupId = null;
 
 // ==================== MONDAY API ====================
 async function mondayQuery(query, variables) {
@@ -845,105 +889,41 @@ async function mondayQuery(query, variables) {
   return res.json();
 }
 
-// Find the "Vital Supplies" board
-async function findBoard() {
-  setStatus('loading', 'Connecting to Monday.com...');
-
+// Ensure "New Item Entry" group exists on the board
+async function ensureNewItemEntryGroup() {
   try {
-    const result = await mondayQuery(`{ boards(limit: 100) { id name } }`);
-    const boards = result.data.boards;
+    // Get existing groups
+    const result = await mondayQuery(`{ boards(ids: [${BOARD_ID}]) { groups { id title } } }`);
+    const groups = result.data.boards[0].groups;
 
-    // Search for "Vital Supplies" board (case-insensitive, partial match)
-    const board = boards.find(b =>
-      b.name.toLowerCase().includes('vital supplies') ||
-      b.name.toLowerCase().includes('vital supply')
-    );
-
-    if (!board) {
-      console.warn('Vital Supplies board not found. Available boards:', boards.map(b => b.name));
-      setStatus('error', 'Board "Vital Supplies" not found on Monday.com');
-      showToast('Could not find Vital Supplies board. Check Monday.com.');
-      return false;
+    const existing = groups.find(g => g.title === 'New Item Entry');
+    if (existing) {
+      newItemEntryGroupId = existing.id;
+      console.log('Found "New Item Entry" group:', newItemEntryGroupId);
+      return;
     }
 
-    BOARD_ID = board.id;
-    console.log(`Found board: "${board.name}" (ID: ${BOARD_ID})`);
-
-    return true;
+    // Create the group
+    const createResult = await mondayQuery(`mutation { create_group(board_id: ${BOARD_ID}, group_name: "New Item Entry") { id } }`);
+    if (createResult.data && createResult.data.create_group) {
+      newItemEntryGroupId = createResult.data.create_group.id;
+      console.log('Created "New Item Entry" group:', newItemEntryGroupId);
+    } else {
+      console.warn('Failed to create "New Item Entry" group:', createResult);
+    }
   } catch (err) {
-    console.error('Error finding board:', err);
-    setStatus('error', 'Failed to connect to Monday.com');
-    return false;
+    console.error('Error ensuring New Item Entry group:', err);
   }
 }
 
-// Get existing columns and create any missing ones
-async function setupColumns() {
-  setStatus('loading', 'Setting up board columns...');
-
-  try {
-    // Get current columns on the board
-    const result = await mondayQuery(`{ boards(ids: [${BOARD_ID}]) { columns { id title type } } }`);
-    const existingColumns = result.data.boards[0].columns;
-
-    console.log('Existing columns:', existingColumns.map(c => `${c.title} (${c.id}, ${c.type})`));
-
-    // Map existing columns to our required ones by matching title
-    for (const req of REQUIRED_COLUMNS) {
-      const match = existingColumns.find(c =>
-        c.title.toLowerCase().replace(/[^a-z0-9]/g, '') === req.title.toLowerCase().replace(/[^a-z0-9]/g, '')
-      );
-
-      if (match) {
-        BOARD_COLUMNS[req.key] = match.id;
-        console.log(`Mapped "${req.title}" -> column ID: ${match.id}`);
-      }
-    }
-
-    // Create any missing columns
-    for (const req of REQUIRED_COLUMNS) {
-      if (!BOARD_COLUMNS[req.key]) {
-        console.log(`Creating column: "${req.title}" (${req.type})`);
-        try {
-          const createResult = await mondayQuery(`
-            mutation {
-              create_column(board_id: ${BOARD_ID}, title: "${req.title}", column_type: ${req.type}) {
-                id
-                title
-              }
-            }
-          `);
-
-          if (createResult.data && createResult.data.create_column) {
-            BOARD_COLUMNS[req.key] = createResult.data.create_column.id;
-            console.log(`Created "${req.title}" -> column ID: ${createResult.data.create_column.id}`);
-          } else {
-            console.warn(`Failed to create column "${req.title}":`, createResult);
-          }
-        } catch (colErr) {
-          console.warn(`Error creating column "${req.title}":`, colErr);
-        }
-      }
-    }
-
-    boardReady = true;
-    console.log('Board columns ready:', BOARD_COLUMNS);
-    return true;
-
-  } catch (err) {
-    console.error('Error setting up columns:', err);
-    setStatus('error', 'Failed to set up board columns');
-    return false;
-  }
-}
-
-// Create an item (row) on the Monday board for each supply item
-async function createMondayItem(itemName, columnValues) {
+// Create an item (row) on the Monday board in a specific group
+async function createMondayItem(itemName, groupId, columnValues) {
   const colValsJson = JSON.stringify(JSON.stringify(columnValues));
 
   const mutation = `mutation {
     create_item(
       board_id: ${BOARD_ID},
+      group_id: "${groupId}",
       item_name: "${itemName.replace(/"/g, '\\"')}",
       column_values: ${colValsJson}
     ) {
@@ -968,16 +948,23 @@ async function handleLogin(code) {
 
     showToast('Hi ' + currentOperator + '!');
 
-    // Auto-detect and setup Monday.com board
-    const found = await findBoard();
-    if (found) {
-      await setupColumns();
-      if (boardReady) {
+    // Setup Monday.com board
+    setStatus('loading', 'Connecting to Monday.com...');
+    try {
+      // Verify board is accessible
+      const result = await mondayQuery(`{ boards(ids: [${BOARD_ID}]) { id name } }`);
+      if (result.data && result.data.boards && result.data.boards.length > 0) {
+        console.log('Connected to board:', result.data.boards[0].name);
+        await ensureNewItemEntryGroup();
+        boardReady = true;
         setStatus('idle', 'Connected to Monday.com - Ready to receive');
         showToast('Monday.com board connected!');
+      } else {
+        setStatus('error', 'Board not found on Monday.com');
+        showToast('Could not find board. Check Monday.com.');
       }
-    } else {
-      // Still usable offline - will log locally
+    } catch (err) {
+      console.error('Error connecting to Monday.com:', err);
       setStatus('idle', 'Offline mode - Ready to receive (no Monday.com)');
     }
   }
@@ -987,9 +974,8 @@ function logout() {
   currentOperator = null;
   receiptItems = [];
   sessionReceipts = [];
-  BOARD_ID = null;
-  BOARD_COLUMNS = {};
   boardReady = false;
+  newItemEntryGroupId = null;
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'block';
   document.getElementById('codeInput').value = '';
@@ -1047,6 +1033,38 @@ document.getElementById('newSupplierInput').addEventListener('keydown', function
   if (e.key === 'Escape') cancelNewSupplier();
 });
 
+// ==================== SUPPLY TYPE DROPDOWN ====================
+document.getElementById('itemName').addEventListener('change', function() {
+  const val = this.value;
+  const newItemSection = document.getElementById('newItemSection');
+  const unitLabel = document.getElementById('unitLabel');
+
+  if (val === '__new_item__') {
+    newItemSection.classList.add('visible');
+    unitLabel.textContent = '';
+    document.getElementById('newItemName').focus();
+    // Update unit label when new item unit changes
+    updateNewItemUnitLabel();
+  } else if (val && SUPPLY_GROUPS[val]) {
+    newItemSection.classList.remove('visible');
+    unitLabel.textContent = SUPPLY_GROUPS[val].unit;
+  } else {
+    newItemSection.classList.remove('visible');
+    unitLabel.textContent = '';
+  }
+});
+
+document.getElementById('newItemUnit').addEventListener('change', function() {
+  updateNewItemUnitLabel();
+});
+
+function updateNewItemUnitLabel() {
+  const itemSelect = document.getElementById('itemName');
+  if (itemSelect.value === '__new_item__') {
+    document.getElementById('unitLabel').textContent = document.getElementById('newItemUnit').value;
+  }
+}
+
 // ==================== TABS ====================
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1061,15 +1079,35 @@ function switchTab(tabName) {
 
 // ==================== ITEM MANAGEMENT ====================
 function addItem() {
-  const name = document.getElementById('itemName').value.trim();
+  const supplySelect = document.getElementById('itemName');
+  const supplyType = supplySelect.value;
   const qty = parseInt(document.getElementById('itemQty').value);
-  const unit = document.getElementById('itemUnit').value;
   const condition = document.getElementById('itemCondition').value;
   const notes = document.getElementById('itemNotes').value.trim();
 
-  if (!name) {
-    showToast('Please enter an item name');
-    document.getElementById('itemName').focus();
+  let itemDisplayName, groupId, columnId, unit;
+
+  if (supplyType === '__new_item__') {
+    // New item entry
+    const newName = document.getElementById('newItemName').value.trim();
+    if (!newName) {
+      showToast('Please enter the new item name');
+      document.getElementById('newItemName').focus();
+      return;
+    }
+    unit = document.getElementById('newItemUnit').value;
+    columnId = UNIT_COLUMN_MAP[unit];
+    groupId = newItemEntryGroupId || null;
+    itemDisplayName = newName;
+  } else if (supplyType && SUPPLY_GROUPS[supplyType]) {
+    const config = SUPPLY_GROUPS[supplyType];
+    groupId = config.groupId;
+    columnId = config.columnId;
+    unit = config.unit;
+    itemDisplayName = supplyType;
+  } else {
+    showToast('Please select a supply type');
+    supplySelect.focus();
     return;
   }
 
@@ -1081,25 +1119,32 @@ function addItem() {
 
   const item = {
     id: Date.now(),
-    name: name,
+    name: itemDisplayName,
     qty: qty,
     unit: unit,
+    groupId: groupId,
+    columnId: columnId,
     condition: condition,
     notes: notes,
+    isNewItem: supplyType === '__new_item__',
     addedAt: new Date()
   };
 
   receiptItems.push(item);
 
-  document.getElementById('itemName').value = '';
+  // Reset form fields
+  supplySelect.value = '';
   document.getElementById('itemQty').value = '';
   document.getElementById('itemNotes').value = '';
   document.getElementById('itemCondition').value = 'good';
-  document.getElementById('itemName').focus();
+  document.getElementById('newItemName').value = '';
+  document.getElementById('newItemSection').classList.remove('visible');
+  document.getElementById('unitLabel').textContent = '';
+  supplySelect.focus();
 
   renderItems();
   renderSummary();
-  showToast(`Added: ${name} (${qty} ${unit})`);
+  showToast(`Added: ${itemDisplayName} (${qty} ${unit})`);
 }
 
 function removeItem(itemId) {
@@ -1145,7 +1190,7 @@ function renderItems() {
           <span class="item-name">${escapeHtml(item.name)}</span>
           <span class="item-meta">${conditionLabel}${item.notes ? ' &middot; ' + escapeHtml(item.notes) : ''}</span>
         </div>
-        <span class="item-qty">${item.qty} ${item.unit}</span>
+        <span class="item-qty">${item.qty} ${escapeHtml(item.unit)}</span>
         <button class="remove-btn" onclick="removeItem(${item.id})" title="Remove">&times;</button>
       </li>`;
   });
@@ -1246,20 +1291,9 @@ async function confirmSubmit() {
   const poNumber = document.getElementById('poNumber').value.trim();
   const deliveryDate = document.getElementById('deliveryDate').value;
   const deliveryMethod = document.getElementById('deliveryMethod').value;
-  const methodLabel = deliveryMethod || '';
 
   const now = new Date();
-  const receivedAt = now.toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: true
-  });
-
-  const conditionLabels = {
-    'good': 'Good',
-    'minor': 'Minor Damage',
-    'damaged': 'Damaged',
-    'rejected': 'Rejected'
-  };
+  const dateStr = deliveryDate || now.toISOString().split('T')[0];
 
   // Push each item as a row to Monday.com
   let mondaySuccess = 0;
@@ -1271,29 +1305,24 @@ async function confirmSubmit() {
       setStatus('loading', `Sending item ${i + 1} of ${receiptItems.length} to Monday.com...`);
 
       try {
-        // Build column values object
+        // Build descriptive item name: "Supplier - Supply Type (Date)"
+        const mondayItemName = `${supplier} - ${item.name} (${dateStr})`;
+
+        // Build column values: only set the count column for this supply type
         const columnValues = {};
+        columnValues[item.columnId] = item.qty;
 
-        if (BOARD_COLUMNS.supplier)        columnValues[BOARD_COLUMNS.supplier] = supplier;
-        if (BOARD_COLUMNS.po_number)       columnValues[BOARD_COLUMNS.po_number] = poNumber;
-        if (BOARD_COLUMNS.delivery_date)   columnValues[BOARD_COLUMNS.delivery_date] = { date: deliveryDate };
-        if (BOARD_COLUMNS.delivery_method) columnValues[BOARD_COLUMNS.delivery_method] = methodLabel;
-        if (BOARD_COLUMNS.quantity)        columnValues[BOARD_COLUMNS.quantity] = item.qty;
-        if (BOARD_COLUMNS.unit)            columnValues[BOARD_COLUMNS.unit] = item.unit;
-        if (BOARD_COLUMNS.condition)       columnValues[BOARD_COLUMNS.condition] = { label: conditionLabels[item.condition] || item.condition };
-        if (BOARD_COLUMNS.notes)           columnValues[BOARD_COLUMNS.notes] = { text: item.notes || '' };
-        if (BOARD_COLUMNS.received_by)     columnValues[BOARD_COLUMNS.received_by] = currentOperator;
-        if (BOARD_COLUMNS.received_at)     columnValues[BOARD_COLUMNS.received_at] = receivedAt;
-        if (BOARD_COLUMNS.receipt_id)      columnValues[BOARD_COLUMNS.receipt_id] = receiptId;
+        // Determine group: use the supply type's group, or "New Item Entry" for new items
+        const groupId = item.isNewItem ? (newItemEntryGroupId || 'topics') : item.groupId;
 
-        const result = await createMondayItem(item.name, columnValues);
+        const result = await createMondayItem(mondayItemName, groupId, columnValues);
 
         if (result.data && result.data.create_item) {
           mondaySuccess++;
-          console.log(`Item "${item.name}" created on Monday.com (ID: ${result.data.create_item.id})`);
+          console.log(`Item "${mondayItemName}" created on Monday.com (ID: ${result.data.create_item.id})`);
         } else {
           mondayErrors++;
-          console.error(`Failed to create item "${item.name}":`, result);
+          console.error(`Failed to create item "${mondayItemName}":`, result);
         }
       } catch (err) {
         mondayErrors++;
@@ -1446,10 +1475,6 @@ document.getElementById('codeInput').addEventListener('keydown', function(e) {
 
 document.getElementById('itemQty').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') addItem();
-});
-
-document.getElementById('itemName').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') document.getElementById('itemQty').focus();
 });
 </script>
 
