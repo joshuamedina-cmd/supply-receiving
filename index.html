@@ -1304,7 +1304,17 @@ async function confirmSubmit() {
         columnValues[item.columnId] = item.qty;
 
         // Determine group: use the supply type's group, or "New Item Entry" for new items
-        const groupId = item.isNewItem ? (newItemEntryGroupId || 'topics') : item.groupId;
+        let groupId = item.isNewItem ? newItemEntryGroupId : item.groupId;
+
+        // If new item and group not yet resolved, try to resolve now
+        if (item.isNewItem && !groupId) {
+          try {
+            await ensureNewItemEntryGroup();
+            groupId = newItemEntryGroupId || 'topics';
+          } catch (e) {
+            groupId = 'topics';
+          }
+        }
 
         const result = await createMondayItem(mondayItemName, groupId, columnValues);
 
@@ -1472,7 +1482,7 @@ document.getElementById('itemQty').addEventListener('keydown', function(e) {
 
 <script>
 // === AUTO-SET OPERATOR FROM LOCALSTORAGE (no code wall) ===
-(function() {
+(async function() {
   var name = null;
   try { name = localStorage.getItem('kmjz_operator_name'); } catch(e) {}
   if (name) {
@@ -1490,6 +1500,25 @@ document.getElementById('itemQty').addEventListener('keydown', function(e) {
   // Show header if hidden
   var header = document.getElementById('appHeader');
   if (header) header.style.display = '';
+
+  // Connect to Monday.com if auto-logged in and not already connected
+  if (name && !boardReady) {
+    try {
+      document.getElementById('deliveryDate').valueAsDate = new Date();
+      setStatus('loading', 'Connecting to Monday.com...');
+      var result = await mondayQuery('{ boards(ids: [' + BOARD_ID + ']) { id name } }');
+      if (result.data && result.data.boards && result.data.boards.length > 0) {
+        await ensureNewItemEntryGroup();
+        boardReady = true;
+        setStatus('idle', 'Connected to Monday.com - Ready to receive');
+      } else {
+        setStatus('error', 'Board not found on Monday.com');
+      }
+    } catch (err) {
+      console.error('Auto-login Monday.com connect error:', err);
+      setStatus('idle', 'Offline mode - Ready to receive (no Monday.com)');
+    }
+  }
 })();
 </script>
 </body>
